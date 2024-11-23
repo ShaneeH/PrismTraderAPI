@@ -1,20 +1,17 @@
-//This is the Servers Entry Point
+// This is the Servers Entry Point
 const express = require('express');
 const cors = require('cors');
-const walletRoutes = require('./routes/walletRoutes');
-const tokenRoutes = require('./routes/tokenRoutes');
-const marketRoutes = require('./routes/marketRoutes');
+const blockChainRoutes = require('./routes/blockChainRoutes');
+const dexRoutes = require('./routes/dexRoutes');
 const app = express();
-
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/wallet', walletRoutes);
-app.use('/token', tokenRoutes);
-app.use('/market', marketRoutes);
+app.use('/blockChain', blockChainRoutes);
+app.use('/dex', dexRoutes);
 
 // Test the server online
 app.get('/online', (req, res) => {
@@ -27,7 +24,7 @@ app.get('/online', (req, res) => {
 });
 
 // Start the server
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });

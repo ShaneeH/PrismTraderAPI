@@ -1,5 +1,5 @@
 const express = require('express');
-const { getMarketPrice, getMarketCap , getCoinImage } = require('../services/marketService');
+const { getMarketPrice, getMarketCap , getCoinImage } = require('../services/dexService');
 const router = express.Router();
 
 //Get market price

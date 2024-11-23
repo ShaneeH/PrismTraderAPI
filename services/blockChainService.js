@@ -1,6 +1,7 @@
 const axios = require('axios');
-
+const { Connection, PublicKey, clusterApiUrl } = require('@solana/web3.js');
 const SOLANA_RPC_URL = 'https://api.mainnet-beta.solana.com';
+const connection = new Connection(clusterApiUrl('mainnet-beta'));
 
 // Fetch token data from Solana Blockchain
 async function getTokenData(contractAddress) {
@@ -27,4 +28,11 @@ async function getTokenData(contractAddress) {
     }
 }
 
-module.exports = { getTokenData };
+async function getWalletBalance(walletAddress) {
+    const publicKey = new PublicKey(walletAddress);
+    const balance = await connection.getBalance(publicKey);
+    return balance / 1e9; // Convert lamports to SOL
+}
+
+
+module.exports = { getTokenData, getWalletBalance };
