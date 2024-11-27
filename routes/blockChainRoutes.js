@@ -1,5 +1,6 @@
 const express = require('express');
-const { getTokenData , getWalletBalance } = require('../services/blockChainService');
+const { PublicKey } = require('@solana/web3.js'); 
+const { getTokenData , getWalletBalance , getWalletTokens, getWalletPortfolio, getPortfolio, getPortfolio2 } = require('../services/blockChainService');
 const router = express.Router();
 
 
@@ -27,6 +28,25 @@ router.get('/balance', async (req, res) => {
 });
 
 
+router.post('/portfolio', async (req, res) => {
+    const { wallet } = req.body; // Expecting the wallet address in the body of the request
+
+    if (!wallet) {
+        return res.status(400).json({ error: 'Wallet address is required' });
+    }
+
+    const portfolio = await getPortfolio(wallet);
+
+    if (portfolio.length > 0) {
+        res.status(200).json(portfolio); // Send back the portfolio data
+    } else {
+        res.status(404).json({ error: 'No token accounts found for this wallet' });
+    }
+});
+
+
+
+
 // Fetch token data
 router.get('/:ca', async (req, res) => {
  
@@ -45,6 +65,9 @@ router.get('/:ca', async (req, res) => {
         });
     }
 });
+
+
+
 
 
 module.exports = router;

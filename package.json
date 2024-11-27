@@ -4,14 +4,19 @@
   "description": "Trading Bot for Solana ",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "author": "Shane H",
   "license": "ISC",
   "dependencies": {
+    "@moralisweb3/common-evm-utils": "^2.27.2",
     "@solana/web3.js": "^1.95.5",
     "axios": "^1.7.7",
     "cors": "^2.8.5",
-    "express": "^4.21.1"
+    "express": "^4.21.1",
+    "moralis": "^2.27.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
   }
 }
