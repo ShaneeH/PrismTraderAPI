@@ -2,6 +2,8 @@ const axios = require('axios');
 const { Connection, PublicKey, clusterApiUrl } = require('@solana/web3.js');
 const SOLANA_RPC_URL = 'https://api.mainnet-beta.solana.com';
 const connection = new Connection(clusterApiUrl('mainnet-beta'));
+const { getMarketPrice, getMarketCap, getCoinImage, getCoinAll, fetchTokenData, checkCoinListedDEX } = require('../services/dexService');
+
 //import Moralis from 'moralis';
 const Moralis = require("moralis");
 // Fetch token data from Solana Blockchain
@@ -76,9 +78,6 @@ async function getWalletTokens(walletAddress) {
 }
 
 
-
-
-
 async function getPortfolio(wallet) {
     const solanaAPI_URL = 'https://api.mainnet-beta.solana.com';
 
@@ -86,37 +85,66 @@ async function getPortfolio(wallet) {
         jsonrpc: "2.0",
         id: 1,
         method: "getTokenAccountsByOwner",
-        params: [
-            wallet,
-            {
-                programId: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-            },
-            {
-                encoding: "jsonParsed"
-            }
+        params: [ wallet, { programId: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"},
+            {encoding: "jsonParsed"}
         ]
     };
 
     try {
+        const result = [];
         const response = await axios.post(solanaAPI_URL, body);
 
         if (response.data && response.data.result) {
             console.log('Success at getPortfolio');
-            
+
             // Fetch token names and additional details
             const tokens = response.data.result.value;
 
             //Get all the Tokens from that Wallet that are not null
             const processedData = tokens
-            .filter(item => item.account.data.parsed.info.tokenAmount.amount !== "0")
-            .map(item => ({
-              mint: item.account.data.parsed.info.mint,
-              tokenAmount: item.account.data.parsed.info.tokenAmount.amount,
-              lamports: item.account.lamports,
-              pubkey: item.pubkey
-            }));
+                .filter(item => item.account.data.parsed.info.tokenAmount.amount !== "0")
+                .map(item => ({
+                    mint: item.account.data.parsed.info.mint,
+                    tokenAmount: item.account.data.parsed.info.tokenAmount.amount,
+                    lamports: item.account.lamports,
+                    pubkey: item.pubkey
+                }));
+
+       
+   
+
+                for (let e of processedData) {
+                    const ca = e.mint;
             
-            return processedData;
+                    const isListed = await checkCoinListedDEX(ca);
+                    
+                    if (isListed) {
+               
+                        const data = await getCoinAll(ca);
+
+                        // Ensure data is not null or undefined
+                        if (data && data.coin_img && data.price && data.market_cap) {
+                            // Combine e.processData and data into a new object
+                            const combinedData = {
+                                'name': data.name,
+                                'img': data.coin_img,
+                                'price': data.price,
+                                'mc': data.market_cap,
+                                'ca': ca,
+                                'qty': e.tokenAmount
+                            }
+                            result.push(combinedData);
+                        };
+            
+                        // Add the combined data into the result array
+                       
+                    } else {
+                      
+                    }
+                }
+
+            console.log(result);    
+            return result;;
 
         } else {
             console.error('No token accounts found');
@@ -127,12 +155,6 @@ async function getPortfolio(wallet) {
         return [];
     }
 }
-
-
-
-
-
-
 //Fetch the Wallet Balance of a Wallet
 async function getWalletBalance(walletAddress) {
     const publicKey = new PublicKey(walletAddress);
@@ -140,7 +162,4 @@ async function getWalletBalance(walletAddress) {
     return balance / 1e9; // Convert lamports to SOL
 }
 
-
-
-
-module.exports = { getTokenData, getWalletBalance, getWalletTokens,  getPortfolio };
+module.exports = { getTokenData, getWalletBalance, getWalletTokens, getPortfolio };

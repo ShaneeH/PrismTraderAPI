@@ -1,5 +1,5 @@
 const express = require('express');
-const { getMarketPrice, getMarketCap , getCoinImage } = require('../services/dexService');
+const { getMarketPrice, getMarketCap , getCoinImage, getCoinAll} = require('../services/dexService');
 const router = express.Router();
 
 //Get market price
@@ -60,5 +60,24 @@ router.get('/full', async (req, res) => {
     }
 });
 
+
+// GET ALL THE COIN DATA
+router.get('/all', async (req, res) => {
+    try {
+        const { address } = req.query;
+
+        if (!address) {
+            return res.status(400).json({ error: 'Address is required' });
+        }
+
+        const coinData = await getCoinAll(address);
+
+        return res.status(200).json(coinData);
+
+    } catch (error) {
+        console.error('Error fetching coin data:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
 
 module.exports = router;
