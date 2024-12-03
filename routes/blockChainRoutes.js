@@ -1,11 +1,10 @@
 const express = require('express');
-const { PublicKey } = require('@solana/web3.js'); 
-const { getTokenData , getWalletBalance , getWalletTokens, getWalletPortfolio, getPortfolio, getPortfolio2 } = require('../services/blockChainService');
+const { getTokenData , getWalletBalance , getPortfolio, } = require('../services/blockChainService');
 const router = express.Router();
 
+//These are the Routes that Send Requests to the Solana RPC API
 
-// Get wallet balance
-
+//Get Solana Balance for a Wallet
 router.get('/balance', async (req, res) => {
     console.log('Balance route hit'); // This should log when you hit the route
     const walletAddress = req.query.address;
@@ -27,7 +26,7 @@ router.get('/balance', async (req, res) => {
     }
 });
 
-
+//Retrieve all the Coins inside a Wallet
 router.post('/portfolio', async (req, res) => {
     const { wallet } = req.body; // Expecting the wallet address in the body of the request
 
@@ -43,9 +42,6 @@ router.post('/portfolio', async (req, res) => {
         res.status(404).json({ error: 'No token accounts found for this wallet' });
     }
 });
-
-
-
 
 // Fetch token data
 router.get('/:ca', async (req, res) => {

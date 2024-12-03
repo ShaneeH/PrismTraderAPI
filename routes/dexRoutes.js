@@ -2,7 +2,9 @@ const express = require('express');
 const { getMarketPrice, getMarketCap , getCoinImage, getCoinAll} = require('../services/dexService');
 const router = express.Router();
 
-//Get market price
+//These are the Routes that Send Requests to the DexScreener API
+
+//Get the Market Price in USD for a Coin
 router.get('/price', async (req, res) => {
     try {
         const ca = req.query.address;
@@ -15,7 +17,7 @@ router.get('/price', async (req, res) => {
     }
 });
 
-//Get market cap
+//Get the Market Cap in USD for a Coin
 router.get('/mc', async (req, res) => {
     try {
         const ca = req.query.address;
@@ -28,7 +30,7 @@ router.get('/mc', async (req, res) => {
     }
 });
 
-//Get Coin Image
+//Get the Image for a Coin 
 router.get('/img', async (req, res) => {
     try {
         const ca = req.query.address;
@@ -40,26 +42,6 @@ router.get('/img', async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
-
-
-//Get all coin info
-router.get('/full', async (req, res) => {
-    try {
-        const ca = req.query.address;
-        const img = await getCoinImage(ca);
-        const price = await getMarketPrice(ca);
-        const market_cap = await getMarketCap(ca);
-
-        res.json({ image : img,
-                   price : price,
-                   market_cap : market_cap
-         });
-    } catch (error) {
-        console.error('Error fetching coin data:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-});
-
 
 // GET ALL THE COIN DATA
 router.get('/all', async (req, res) => {

@@ -4,6 +4,7 @@ const cors = require('cors');
 const blockChainRoutes = require('./routes/blockChainRoutes');
 const dexRoutes = require('./routes/dexRoutes');
 const app = express();
+const axios = require('axios');
 
 // Middleware
 app.use(cors());
@@ -28,3 +29,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
+

@@ -2,10 +2,9 @@ const axios = require('axios');
 const { Connection, PublicKey, clusterApiUrl } = require('@solana/web3.js');
 const SOLANA_RPC_URL = 'https://api.mainnet-beta.solana.com';
 const connection = new Connection(clusterApiUrl('mainnet-beta'));
-const { getMarketPrice, getMarketCap, getCoinImage, getCoinAll, fetchTokenData, checkCoinListedDEX } = require('../services/dexService');
+const { getCoinAll, checkCoinListedDEX } = require('../services/dexService');
 
-//import Moralis from 'moralis';
-const Moralis = require("moralis");
+
 // Fetch token data from Solana Blockchain
 async function getTokenData(contractAddress) {
     const payload = {
@@ -32,9 +31,9 @@ async function getTokenData(contractAddress) {
 }
 
 
-async function getWalletTokens(walletAddress) {
+async function getWalletTokens(wallet) {
     console.log('getWallet HIT');
-    const publicKey = new PublicKey(walletAddress);
+    const publicKey = new PublicKey(wallet);
 
     try {
         // Fetch all token accounts owned by the user
@@ -79,15 +78,16 @@ async function getWalletTokens(walletAddress) {
 
 
 async function getPortfolio(wallet) {
+    //Step One get a List of all the Tokens from the Wallet
+    //This is Done via the Solana RPC API
+
     const solanaAPI_URL = 'https://api.mainnet-beta.solana.com';
 
     const body = {
         jsonrpc: "2.0",
         id: 1,
         method: "getTokenAccountsByOwner",
-        params: [ wallet, { programId: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"},
-            {encoding: "jsonParsed"}
-        ]
+        params: [wallet, { programId: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" }, { encoding: "jsonParsed" }]
     };
 
     try {
@@ -97,10 +97,10 @@ async function getPortfolio(wallet) {
         if (response.data && response.data.result) {
             console.log('Success at getPortfolio');
 
-            // Fetch token names and additional details
+            // Fetch token accounts
             const tokens = response.data.result.value;
 
-            //Get all the Tokens from that Wallet that are not null
+            // Process tokens: filter out empty balances and extract relevant info
             const processedData = tokens
                 .filter(item => item.account.data.parsed.info.tokenAmount.amount !== "0")
                 .map(item => ({
@@ -110,42 +110,47 @@ async function getPortfolio(wallet) {
                     pubkey: item.pubkey
                 }));
 
-       
-   
+            // Prepare parallel requests for faster End User Requests
+            const tokenPromises = processedData.map(async (e) => {
+                const ca = e.mint;
 
-                for (let e of processedData) {
-                    const ca = e.mint;
-            
-                    const isListed = await checkCoinListedDEX(ca);
-                    
-                    if (isListed) {
-               
-                        const data = await getCoinAll(ca);
+                // Check if the coin is listed on DexScreener
+                const isListed = await checkCoinListedDEX(ca);
 
-                        // Ensure data is not null or undefined
-                        if (data && data.coin_img && data.price && data.market_cap) {
-                            // Combine e.processData and data into a new object
-                            const combinedData = {
-                                'name': data.name,
-                                'img': data.coin_img,
-                                'price': data.price,
-                                'mc': data.market_cap,
-                                'ca': ca,
-                                'qty': e.tokenAmount
-                            }
-                            result.push(combinedData);
+                //If the Coins is On Dex Screener we then use there API for more INFO on the coin
+                if (isListed) {
+
+                    // This Method is from dexService.js
+                    const data = await getCoinAll(ca);
+
+                   //WE then Combine Data from Solana and DEX API into one JSON
+                    if (data && data.coin_img && data.price && data.market_cap) {
+                        return {
+
+                            //These values are from DEX API
+                            name: data.name,
+                            img: data.coin_img,
+                            price: data.price,
+                            mc: data.market_cap,
+
+                            //These values are from Solana API
+                            ca: ca,
+                            qty: e.tokenAmount
+
                         };
-            
-                        // Add the combined data into the result array
-                       
-                    } else {
-                      
                     }
                 }
+                return null; // Return null for unlisted coins
+            });
 
-            console.log(result);    
-            return result;;
+            // Resolve all token promises in parallel
+            const resolvedTokens = await Promise.all(tokenPromises);
 
+            // Filter out null results
+            result.push(...resolvedTokens.filter(item => item !== null));
+
+            console.log(result);
+            return result;
         } else {
             console.error('No token accounts found');
             return [];
@@ -155,9 +160,10 @@ async function getPortfolio(wallet) {
         return [];
     }
 }
+
 //Fetch the Wallet Balance of a Wallet
-async function getWalletBalance(walletAddress) {
-    const publicKey = new PublicKey(walletAddress);
+async function getWalletBalance(wallet) {
+    const publicKey = new PublicKey(wallet);
     const balance = await connection.getBalance(publicKey);
     return balance / 1e9; // Convert lamports to SOL
 }
